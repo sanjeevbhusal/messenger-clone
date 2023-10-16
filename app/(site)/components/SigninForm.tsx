@@ -12,7 +12,12 @@ import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import {
+  AiOutlineEye,
+  AiOutlineEyeInvisible,
+  AiOutlineGithub,
+} from "react-icons/ai";
+import { RiGoogleLine } from "react-icons/ri";
 
 import {
   Form,
@@ -24,6 +29,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
+import { AuthFlow } from "@/lib/types";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -32,7 +39,11 @@ const formSchema = z.object({
 
 type formSchemaType = z.infer<typeof formSchema>;
 
-function SigninForm() {
+interface SigninFormProps {
+  toggleAuthenticationFlow: (flow: AuthFlow) => void;
+}
+
+function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -88,7 +99,6 @@ function SigninForm() {
                       >
                         {hidePassword ? (
                           <AiOutlineEyeInvisible size={20} className="mt-0.5" />
-                         
                         ) : (
                           <AiOutlineEye size={20} className="mt-0.5" />
                         )}
@@ -103,8 +113,38 @@ function SigninForm() {
               )}
             />
           </CardContent>
-          <CardFooter>
-            <Button type="submit">Signin</Button>
+          <CardFooter className="w-full flex flex-col gap-8">
+            <Button type="submit" className="w-full">
+              Signin
+            </Button>
+            <div className="w-full flex gap-4 items-center">
+              <Separator className="w-1 grow" />
+              <p className="text-gray-500 text-xs">OR CONTINUE WITH</p>
+              <Separator className="w-1 grow" />
+            </div>
+            <div className="flex gap-4 w-full items-center justify-between">
+              <Button variant={"outline"} className="px-10">
+                <span>
+                  <RiGoogleLine size={20} />
+                </span>
+                <span className="inline-block ml-1">Google</span>
+              </Button>
+              <Button variant={"outline"} className="px-10">
+                <span>
+                  <AiOutlineGithub size={20} />
+                </span>
+                <span className="inline-block ml-1">Github</span>
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Do not have an account?{" "}
+              <span
+                className="underline cursor-pointer"
+                onClick={() => toggleAuthenticationFlow("signup")}
+              >
+                Signup
+              </span>
+            </p>
           </CardFooter>
         </Card>
       </form>

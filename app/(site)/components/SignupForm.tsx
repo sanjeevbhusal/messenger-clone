@@ -16,10 +16,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { AuthFlow } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { AiOutlineEyeInvisible, AiOutlineEye } from "react-icons/ai";
+import {
+  AiOutlineEyeInvisible,
+  AiOutlineEye,
+  AiOutlineGithub,
+} from "react-icons/ai";
+import { RiGoogleLine } from "react-icons/ri";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -30,7 +37,11 @@ const formSchema = z.object({
 
 type formSchemaType = z.infer<typeof formSchema>;
 
-function SignupForm() {
+interface SignupFormProps {
+  toggleAuthenticationFlow: (flow: AuthFlow) => void;
+}
+
+function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -113,8 +124,38 @@ function SignupForm() {
               )}
             />
           </CardContent>
-          <CardFooter>
-            <Button type="submit">Signup</Button>
+          <CardFooter className="w-full flex flex-col gap-8">
+            <Button type="submit" className="w-full">
+              Signup
+            </Button>
+            <div className="w-full flex gap-4 items-center">
+              <Separator className="w-1 grow" />
+              <p className="text-gray-500 text-xs">OR CONTINUE WITH</p>
+              <Separator className="w-1 grow" />
+            </div>
+            <div className="flex gap-4 w-full items-center justify-between">
+              <Button variant={"outline"} className="px-10">
+                <span>
+                  <RiGoogleLine size={20} />
+                </span>
+                <span className="inline-block ml-1">Google</span>
+              </Button>
+              <Button variant={"outline"} className="px-10">
+                <span>
+                  <AiOutlineGithub size={20} />
+                </span>
+                <span className="inline-block ml-1">Github</span>
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Already have an account?{" "}
+              <span
+                className="underline cursor-pointer"
+                onClick={() => toggleAuthenticationFlow("signin")}
+              >
+                Login
+              </span>
+            </p>
           </CardFooter>
         </Card>
       </form>

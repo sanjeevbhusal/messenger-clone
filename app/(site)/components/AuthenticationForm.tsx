@@ -3,20 +3,39 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SigninForm from "./SigninForm";
 import SignupForm from "./SignupForm";
+import { useState } from "react";
+import { AuthFlow } from "@/lib/types";
 
 function AuthenticationForm() {
+  const [authenticationFlow, setAuthenticationFlow] =
+    useState<AuthFlow>("signin");
+
+  function onAuthFlowChange(flow: AuthFlow) {
+    setAuthenticationFlow(flow);
+  }
+
   return (
     <div>
-      <Tabs defaultValue="signin" className="w-[400px]">
+      <Tabs className="w-[400px]" value={authenticationFlow}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="signin">Signin</TabsTrigger>
-          <TabsTrigger value="signup">Signup</TabsTrigger>
+          <TabsTrigger
+            value="signin"
+            onClick={() => onAuthFlowChange("signin")}
+          >
+            Signin
+          </TabsTrigger>
+          <TabsTrigger
+            value="signup"
+            onClick={() => onAuthFlowChange("signup")}
+          >
+            Signup
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
-          <SigninForm />
+          <SigninForm toggleAuthenticationFlow={onAuthFlowChange} />
         </TabsContent>
         <TabsContent value="signup">
-          <SignupForm />
+          <SignupForm toggleAuthenticationFlow={onAuthFlowChange} />
         </TabsContent>
       </Tabs>
     </div>
