@@ -31,6 +31,11 @@ import {
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { AuthFlow } from "@/lib/types";
+import { useToast } from "@/components/ui/use-toast";
+import axios, { AxiosError } from "axios";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -52,9 +57,48 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
     },
   });
 
+  const { toast } = useToast();
+  const router = useRouter();
   const [hidePassword, setHidePassword] = useState(true);
+  const [unhandledError, setUnhandledError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function onSubmit(values: formSchemaType) {}
+  async function onSubmit(values: formSchemaType) {
+    setIsLoading(true);
+    setUnhandledError(false);
+
+    try {
+      await axios.post("/api/auth/login", values);
+      form.reset();
+      toast({
+        title: "User login successful",
+        description: "Redirecting to the application...",
+      });
+      router.push("/dashboard");
+    } catch (error) {
+      const loginError = error as AxiosError;
+
+      switch (loginError.response?.status) {
+        case 404: {
+          form.setError("email", {
+            message: "This email doesnot exist",
+          });
+          return;
+        }
+        case 401: {
+          form.setError("password", {
+            message: "Password is invalid",
+          });
+          return;
+        }
+        default: {
+          setUnhandledError(true);
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <Form {...form}>
@@ -114,9 +158,18 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
             />
           </CardContent>
           <CardFooter className="w-full flex flex-col gap-8">
-            <Button type="submit" className="w-full">
-              Signin
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? <Loader2 className="animate-spin" /> : "Signin"}
             </Button>
+            {unhandledError ? (
+              <Alert variant={"destructive"}>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Server Error occurred</AlertTitle>
+                <AlertDescription>
+                  Something went wrong on our Server. Please try again later.
+                </AlertDescription>
+              </Alert>
+            ) : null}
             <div className="w-full flex gap-4 items-center">
               <Separator className="w-1 grow" />
               <p className="text-gray-500 text-xs">OR CONTINUE WITH</p>
