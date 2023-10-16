@@ -28,6 +28,10 @@ import {
 } from "react-icons/ai";
 import { RiGoogleLine } from "react-icons/ri";
 import { z } from "zod";
+import axios, { AxiosError } from "axios";
+import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name cannot be less than 2 characters"),
@@ -51,9 +55,41 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
     },
   });
 
+  const { toast } = useToast();
   const [hidePassword, setHidePassword] = useState(true);
+  const [unhandledError, setUnhandledError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function onSubmit(values: formSchemaType) {}
+  async function onSubmit(values: formSchemaType) {
+    setIsLoading(true);
+    setUnhandledError(false);
+
+    try {
+      await axios.post("/api/auth/register", values);
+      toggleAuthenticationFlow("signin");
+      toast({
+        title: "User signup successful",
+        description: "Please login to access your account",
+      });
+    } catch (error) {
+      const signupError = error as AxiosError;
+
+      switch (signupError.response?.status) {
+        case 409: {
+          form.setError("email", {
+            message: "This email is already used",
+          });
+          return;
+        }
+        default: {
+          setUnhandledError(true);
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -125,9 +161,19 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
             />
           </CardContent>
           <CardFooter className="w-full flex flex-col gap-8">
-            <Button type="submit" className="w-full">
-              Signup
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? <Loader2 className="animate-spin" /> : "Signup"}
             </Button>
+            {unhandledError ? (
+              <Alert variant={"destructive"}>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Server Error occurred</AlertTitle>
+                <AlertDescription>
+                  Something went wrong on our Server. Please try again later.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
             <div className="w-full flex gap-4 items-center">
               <Separator className="w-1 grow" />
               <p className="text-gray-500 text-xs">OR CONTINUE WITH</p>

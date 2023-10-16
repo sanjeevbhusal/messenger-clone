@@ -3,7 +3,7 @@ import AuthenticationForm from "./components/AuthenticationForm";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center gap-4 px-24 py-8">
+    <main className="min-h-screen flex flex-col items-center gap-4 p-24 ">
       <Image
         src="/images/logo.jpeg"
         alt="Messenger logo"
