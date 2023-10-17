@@ -28,10 +28,10 @@ import {
 } from "react-icons/ai";
 import { RiGoogleLine } from "react-icons/ri";
 import { z } from "zod";
-import axios, { AxiosError } from "axios";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name cannot be less than 2 characters"),
@@ -64,30 +64,37 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
     setIsLoading(true);
     setUnhandledError(false);
 
-    try {
-      await axios.post("/api/auth/register", values);
+    const response = await signIn(
+      "credentials",
+      {
+        redirect: false,
+        ...values,
+      },
+      { type: "signup" }
+    );
+
+    if (response?.ok) {
       toggleAuthenticationFlow("signin");
       toast({
         title: "User signup successful",
         description: "Please login to access your account",
       });
-    } catch (error) {
-      const signupError = error as AxiosError;
-
-      switch (signupError.response?.status) {
-        case 409: {
-          form.setError("email", {
-            message: "This email is already used",
-          });
-          return;
-        }
-        default: {
-          setUnhandledError(true);
-        }
-      }
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    switch (response?.error) {
+      case "Conflict Error": {
+        form.setError("email", {
+          message: "This email is already used",
+        });
+        break;
+      }
+      default: {
+        setUnhandledError(true);
+      }
+    }
+    setIsLoading(false);
   }
 
   return (

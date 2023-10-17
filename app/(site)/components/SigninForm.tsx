@@ -36,6 +36,7 @@ import axios, { AxiosError } from "axios";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -67,37 +68,43 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
     setIsLoading(true);
     setUnhandledError(false);
 
-    try {
-      await axios.post("/api/auth/login", values);
-      form.reset();
+    const response = await signIn(
+      "credentials",
+      {
+        redirect: false,
+        ...values,
+      },
+      { type: "signin" }
+    );
+
+    if (response?.ok) {
       toast({
         title: "User login successful",
-        description: "Redirecting to the application...",
+        description: "You are being redirected...",
       });
-      router.push("/dashboard");
-    } catch (error) {
-      const loginError = error as AxiosError;
-
-      switch (loginError.response?.status) {
-        case 404: {
-          form.setError("email", {
-            message: "This email doesnot exist",
-          });
-          return;
-        }
-        case 401: {
-          form.setError("password", {
-            message: "Password is invalid",
-          });
-          return;
-        }
-        default: {
-          setUnhandledError(true);
-        }
-      }
-    } finally {
       setIsLoading(false);
+      router.push("/dashboard");
+      return;
     }
+
+    switch (response?.error) {
+      case "User Notfound Error": {
+        form.setError("email", {
+          message: "Email doesnot exist",
+        });
+        break;
+      }
+      case "Password Invalid Error": {
+        form.setError("password", {
+          message: "Password is invalid",
+        });
+        break;
+      }
+      default: {
+        setUnhandledError(true);
+      }
+    }
+    setIsLoading(false);
   }
 
   return (
