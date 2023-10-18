@@ -7,62 +7,75 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { AuthFlow } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import {
-  AiOutlineEyeInvisible,
   AiOutlineEye,
+  AiOutlineEyeInvisible,
   AiOutlineGithub,
 } from "react-icons/ai";
 import { RiGoogleLine } from "react-icons/ri";
-import { z } from "zod";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useEffect, useState } from "react";
+import { Separator } from "@/components/ui/separator";
+import { AuthFlow } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import axios, { AxiosError } from "axios";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Name cannot be less than 2 characters"),
   email: z.string().email("Please enter a valid email"),
-  password: z.string().min(8, "Password cannot be less than 8 characters"),
+  password: z.string(),
 });
 
 type formSchemaType = z.infer<typeof formSchema>;
 
-interface SignupFormProps {
+interface SigninFormProps {
   toggleAuthenticationFlow: (flow: AuthFlow) => void;
 }
 
-function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
+function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
       email: "",
       password: "",
     },
   });
 
   const { toast } = useToast();
+  const params = useSearchParams();
   const [hidePassword, setHidePassword] = useState(true);
   const [unhandledError, setUnhandledError] = useState(false);
+  const [callbackError, setCallbackError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const callbackError = params.get("error");
+    if (callbackError) {
+      setCallbackError(callbackError);
+    }
+  }, []);
 
   async function onSubmit(values: formSchemaType) {
     setIsLoading(true);
     setUnhandledError(false);
+    // We no longer need to show the callback error since the user has performed another login request.
+    setCallbackError("");
 
     const response = await signIn(
       "credentials",
@@ -70,23 +83,29 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
         redirect: false,
         ...values,
       },
-      { type: "signup" }
+      { type: "signin" }
     );
 
     if (response?.ok) {
-      toggleAuthenticationFlow("signin");
       toast({
-        title: "User signup successful",
-        description: "Please login to access your account",
+        title: "User login successful",
+        description: "You are being redirected...",
       });
       setIsLoading(false);
+      router.push("/dashboard");
       return;
     }
 
     switch (response?.error) {
-      case "Conflict Error": {
+      case "User Notfound Error": {
         form.setError("email", {
-          message: "This email is already used",
+          message: "Email doesnot exist",
+        });
+        break;
+      }
+      case "Password Invalid Error": {
+        form.setError("password", {
+          message: "Password is invalid",
         });
         break;
       }
@@ -102,25 +121,12 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardHeader>
-            <CardTitle>Signup</CardTitle>
+            <CardTitle>Signin</CardTitle>
             <CardDescription>
               Login to your account to start using messenger.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="space-y-1">
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="email"
@@ -148,7 +154,7 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
                         className="pr-12"
                       />
                       <div
-                        className="p-2 cursor-pointer bg-gray-100 right-0 absolute top-0"
+                        className="p-2 cursor-pointer bg-gray-100 right-0 absolute top-0 bottom-0"
                         onClick={() => setHidePassword(!hidePassword)}
                       >
                         {hidePassword ? (
@@ -160,8 +166,8 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
                     </div>
                   </FormControl>
                   {/* <FormDescription>
-               Password must be at least 8 characters
-             </FormDescription> */}
+                Password must be at least 8 characters
+              </FormDescription> */}
                   <FormMessage />
                 </FormItem>
               )}
@@ -169,7 +175,7 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
           </CardContent>
           <CardFooter className="w-full flex flex-col gap-8">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" /> : "Signup"}
+              {isLoading ? <Loader2 className="animate-spin" /> : "Signin"}
             </Button>
             {unhandledError ? (
               <Alert variant={"destructive"}>
@@ -180,6 +186,16 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
                 </AlertDescription>
               </Alert>
             ) : null}
+            {callbackError ? (
+              <Alert variant={"destructive"}>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Email and Login Provider Mismatch</AlertTitle>
+                <AlertDescription>
+                  There is no account associated with this email and social
+                  login provider
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
             <div className="w-full flex gap-4 items-center">
               <Separator className="w-1 grow" />
@@ -187,13 +203,23 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
               <Separator className="w-1 grow" />
             </div>
             <div className="flex gap-4 w-full items-center justify-between">
-              <Button variant={"outline"} className="px-10">
+              <Button
+                type="button"
+                variant={"outline"}
+                className="px-10"
+                onClick={() => signIn("google")}
+              >
                 <span>
                   <RiGoogleLine size={20} />
                 </span>
                 <span className="inline-block ml-1">Google</span>
               </Button>
-              <Button variant={"outline"} className="px-10">
+              <Button
+                type="button"
+                variant={"outline"}
+                className="px-10"
+                onClick={() => signIn("github")}
+              >
                 <span>
                   <AiOutlineGithub size={20} />
                 </span>
@@ -201,12 +227,12 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
               </Button>
             </div>
             <p className="text-xs text-gray-500">
-              Already have an account?{" "}
+              Do not have an account?{" "}
               <span
                 className="underline cursor-pointer"
-                onClick={() => toggleAuthenticationFlow("signin")}
+                onClick={() => toggleAuthenticationFlow("signup")}
               >
-                Login
+                Signup
               </span>
             </p>
           </CardFooter>
@@ -216,4 +242,23 @@ function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
   );
 }
 
-export default SignupForm;
+const getCallbackErrorMessageComponent = (code?: string) => {
+  let title = "Server Error occurred";
+  let description = "";
+
+  if (code === "OAuthAccountNotLinked") {
+    title = "Email and Login Provider Mismatch Error";
+    description =
+      "There is no account associated with this email and social login provider.";
+  }
+
+  return (
+    <Alert variant={"destructive"}>
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>{description}</AlertDescription>
+    </Alert>
+  );
+};
+
+export default SigninForm;

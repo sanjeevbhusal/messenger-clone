@@ -5,6 +5,7 @@ import SigninForm from "./SigninForm";
 import SignupForm from "./SignupForm";
 import { useState } from "react";
 import { AuthFlow } from "@/lib/types";
+import { useSearchParams } from "next/navigation";
 
 function AuthenticationForm() {
   const [authenticationFlow, setAuthenticationFlow] =

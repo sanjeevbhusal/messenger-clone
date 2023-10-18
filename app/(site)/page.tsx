@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import AuthenticationForm from "./components/AuthenticationForm";
+import AuthenticationForm from "../../components/AuthenticationForm";
 import useAuth from "../hooks/useAuth";
-import Dashboard from "./components/Dashboard";
 import { Loader2 } from "lucide-react";
 import { User } from "@prisma/client";
+import Dashboard from "@/components/Dashboard";
 
 export default function Home() {
   const { status, user } = useAuth();

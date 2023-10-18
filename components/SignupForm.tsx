@@ -7,59 +7,55 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import {
-  AiOutlineEye,
-  AiOutlineEyeInvisible,
-  AiOutlineGithub,
-} from "react-icons/ai";
-import { RiGoogleLine } from "react-icons/ri";
-
 import {
   Form,
-  FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
+  FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { AuthFlow } from "@/lib/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import {
+  AiOutlineEyeInvisible,
+  AiOutlineEye,
+  AiOutlineGithub,
+} from "react-icons/ai";
+import { RiGoogleLine } from "react-icons/ri";
+import { z } from "zod";
 import { useToast } from "@/components/ui/use-toast";
-import axios, { AxiosError } from "axios";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 const formSchema = z.object({
+  name: z.string().min(2, "Name cannot be less than 2 characters"),
   email: z.string().email("Please enter a valid email"),
-  password: z.string(),
+  password: z.string().min(8, "Password cannot be less than 8 characters"),
 });
 
 type formSchemaType = z.infer<typeof formSchema>;
 
-interface SigninFormProps {
+interface SignupFormProps {
   toggleAuthenticationFlow: (flow: AuthFlow) => void;
 }
 
-function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
+function SignupForm({ toggleAuthenticationFlow }: SignupFormProps) {
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
     },
   });
 
   const { toast } = useToast();
-  const router = useRouter();
   const [hidePassword, setHidePassword] = useState(true);
   const [unhandledError, setUnhandledError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,29 +70,23 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
         redirect: false,
         ...values,
       },
-      { type: "signin" }
+      { type: "signup" }
     );
 
     if (response?.ok) {
+      toggleAuthenticationFlow("signin");
       toast({
-        title: "User login successful",
-        description: "You are being redirected...",
+        title: "User signup successful",
+        description: "Please login to access your account",
       });
       setIsLoading(false);
-      router.push("/dashboard");
       return;
     }
 
     switch (response?.error) {
-      case "User Notfound Error": {
+      case "Conflict Error": {
         form.setError("email", {
-          message: "Email doesnot exist",
-        });
-        break;
-      }
-      case "Password Invalid Error": {
-        form.setError("password", {
-          message: "Password is invalid",
+          message: "This email is already used",
         });
         break;
       }
@@ -112,12 +102,25 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardHeader>
-            <CardTitle>Signin</CardTitle>
+            <CardTitle>Signup</CardTitle>
             <CardDescription>
               Login to your account to start using messenger.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"
@@ -145,7 +148,7 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
                         className="pr-12"
                       />
                       <div
-                        className="p-2 cursor-pointer bg-gray-100 right-0 absolute top-0 bottom-0"
+                        className="p-2 cursor-pointer bg-gray-100 right-0 absolute top-0"
                         onClick={() => setHidePassword(!hidePassword)}
                       >
                         {hidePassword ? (
@@ -157,8 +160,8 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
                     </div>
                   </FormControl>
                   {/* <FormDescription>
-                Password must be at least 8 characters
-              </FormDescription> */}
+               Password must be at least 8 characters
+             </FormDescription> */}
                   <FormMessage />
                 </FormItem>
               )}
@@ -166,7 +169,7 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
           </CardContent>
           <CardFooter className="w-full flex flex-col gap-8">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" /> : "Signin"}
+              {isLoading ? <Loader2 className="animate-spin" /> : "Signup"}
             </Button>
             {unhandledError ? (
               <Alert variant={"destructive"}>
@@ -177,19 +180,30 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
                 </AlertDescription>
               </Alert>
             ) : null}
+
             <div className="w-full flex gap-4 items-center">
               <Separator className="w-1 grow" />
               <p className="text-gray-500 text-xs">OR CONTINUE WITH</p>
               <Separator className="w-1 grow" />
             </div>
             <div className="flex gap-4 w-full items-center justify-between">
-              <Button variant={"outline"} className="px-10">
+              <Button
+                type="button"
+                variant={"outline"}
+                className="px-10"
+                onClick={() => signIn("google")}
+              >
                 <span>
                   <RiGoogleLine size={20} />
                 </span>
                 <span className="inline-block ml-1">Google</span>
               </Button>
-              <Button variant={"outline"} className="px-10">
+              <Button
+                type="button"
+                variant={"outline"}
+                className="px-10"
+                onClick={() => signIn("github")}
+              >
                 <span>
                   <AiOutlineGithub size={20} />
                 </span>
@@ -197,12 +211,12 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
               </Button>
             </div>
             <p className="text-xs text-gray-500">
-              Do not have an account?{" "}
+              Already have an account?{" "}
               <span
                 className="underline cursor-pointer"
-                onClick={() => toggleAuthenticationFlow("signup")}
+                onClick={() => toggleAuthenticationFlow("signin")}
               >
-                Signup
+                Login
               </span>
             </p>
           </CardFooter>
@@ -212,4 +226,4 @@ function SigninForm({ toggleAuthenticationFlow }: SigninFormProps) {
   );
 }
 
-export default SigninForm;
+export default SignupForm;

@@ -3,9 +3,12 @@ import { User } from "@prisma/client";
 import axios from "axios";
 import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
 import { z } from "zod";
 import * as bcrypt from "bcrypt";
 import { environmentVariables } from "@/lib/constants";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 
 const signupFormSchema = z.object({
   name: z.string().min(2, "Name cannot be less than 2 characters"),
@@ -85,6 +88,7 @@ async function handleSignin(credentials: any) {
 }
 
 const authOptions: AuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       async authorize(credentials, request) {
@@ -105,6 +109,14 @@ const authOptions: AuthOptions = {
       },
       credentials: {},
     }),
+    GithubProvider({
+      clientId: environmentVariables.githubClientId,
+      clientSecret: environmentVariables.githubClientSecret,
+    }),
+    GoogleProvider({
+      clientId: environmentVariables.googleClientId,
+      clientSecret: environmentVariables.googleClientSecret,
+    }),
   ],
   debug: true,
   secret: environmentVariables.nextAuthSecretKey,
@@ -112,10 +124,10 @@ const authOptions: AuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, ...rest }) {
       if (user) {
         const newToken = { ...token, ...user };
-        console.log("==>", newToken);
+        console.log("JWT Callback==>", { token, user, rest });
         return newToken;
       }
       return token;
@@ -124,11 +136,11 @@ const authOptions: AuthOptions = {
       // Whatever you return from this function will be the payload for jwt.
     },
     async session({ session, token }) {
-      // return { ...session, ...token };
       return { user: token, expires: session.expires };
-      console.log("===>session ", token);
-      return session;
     },
+  },
+  pages: {
+    signIn: "/",
   },
 };
 
