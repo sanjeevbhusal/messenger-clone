@@ -111,6 +111,25 @@ const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
   },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        const newToken = { ...token, ...user };
+        console.log("==>", newToken);
+        return newToken;
+      }
+      return token;
+      // This callback will be called whenever a jwt is created or updated.
+      // jwt is created whenever user first logs in and it is updated when it is accessed in the client.
+      // Whatever you return from this function will be the payload for jwt.
+    },
+    async session({ session, token }) {
+      // return { ...session, ...token };
+      return { user: token, expires: session.expires };
+      console.log("===>session ", token);
+      return session;
+    },
+  },
 };
 
 const handler = NextAuth(authOptions);

@@ -1,8 +1,5 @@
-import dotenv from "dotenv";
-dotenv.config();
-
 const environmentVariables = {
-  nextAuthSecretKey: process.env.NEXTAUTH_SECRET_KEY || "",
+  nextAuthSecretKey: process.env.NEXTAUTH_SECRET || "",
 };
 
 export { environmentVariables };
