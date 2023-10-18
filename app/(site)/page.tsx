@@ -3,14 +3,20 @@
 import Image from "next/image";
 import AuthenticationForm from "./components/AuthenticationForm";
 import useAuth from "../hooks/useAuth";
-import { redirect } from "next/navigation";
 import Dashboard from "./components/Dashboard";
+import { Loader2 } from "lucide-react";
+import { User } from "@prisma/client";
 
 export default function Home() {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
 
   if (status === "loading") {
-    return <div>Loading.....</div>;
+    return (
+      <div className="flex flex-col w-40 mx-auto justify-center min-h-screen gap-4">
+        <Loader2 className="animate-spin mx-auto" size={40} />
+        <h3 className="ml-12">Loading...</h3>
+      </div>
+    );
   }
 
   if (status === "unauthenticated") {
@@ -29,5 +35,5 @@ export default function Home() {
     );
   }
 
-  return <Dashboard />;
+  return <Dashboard user={user as User} />;
 }
