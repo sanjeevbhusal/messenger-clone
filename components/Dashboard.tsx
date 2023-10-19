@@ -1,19 +1,36 @@
 "use client";
 
-import useAuth from "@/app/hooks/useAuth";
 import { User } from "@prisma/client";
-// import { getServerSession } from "next-auth";
-import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { Button } from "./ui/button";
+import SideBar from "./SideBar";
+import Chat from "./Chat";
+import NavBar from "./NavBar";
+import { Separator } from "./ui/separator";
+import { useState } from "react";
 
 interface DashboardProps {
   user: User;
 }
 
 function Dashboard({ user }: DashboardProps) {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  function changeSelectedUser(user: User) {
+    setSelectedUser(user);
+  }
+
   return (
-    <div>
-      <pre>{JSON.stringify(user)}</pre>
+    <div className="h-screen flex flex-col">
+      <NavBar />
+      <div className="h-[calc(100vh-64px)] flex">
+        <SideBar
+          selectedUser={selectedUser}
+          changeSelectedUser={changeSelectedUser}
+        />
+        <Separator orientation="vertical" />
+        <Chat user={selectedUser} />
+      </div>
     </div>
   );
 }

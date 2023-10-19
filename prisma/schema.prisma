@@ -10,6 +10,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model PendingFriendship {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String @db.ObjectId
+  receiverId String @db.ObjectId
+}
+
+// User ko followers yeti xa bhanera kasari thaha paunu
+
 model User {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
   name          String
@@ -21,8 +29,6 @@ model User {
   updatedAt     DateTime  @updatedAt
   Account       Account[]
 }
-
-// A Account is a connection/relationship between a User and a Provider (Github, Google)
 
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId

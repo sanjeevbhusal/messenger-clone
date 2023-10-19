@@ -1,0 +1,20 @@
+import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+
+  const searchTerm = searchParams.get("searchTerm") || "";
+
+  const users = await prisma.user.findMany({
+    where: {
+      name: {
+        contains: searchTerm,
+      },
+    },
+  });
+
+  return NextResponse.json({
+    users,
+  });
+}
