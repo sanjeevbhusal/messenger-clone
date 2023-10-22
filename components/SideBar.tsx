@@ -42,7 +42,7 @@ function SideBar({ selectedUser, changeSelectedUser }: SideBarProps) {
   }
 
   return (
-    <div className="p-4 w-[40%] max-w-[300px]  overflow-y-scroll ">
+    <div className="p-4 w-[40%] max-w-[300px]  overflow-y-auto ">
       <form onSubmit={handleSearch}>
         <Input
           placeholder="Search messenger"

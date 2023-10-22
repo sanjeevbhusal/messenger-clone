@@ -7,23 +7,47 @@ import SideBar from "./SideBar";
 import Chat from "./Chat";
 import NavBar from "./NavBar";
 import { Separator } from "./ui/separator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 
-interface DashboardProps {
-  user: User;
-}
+function Dashboard() {
+  const params = useSearchParams();
+  const router = useRouter();
 
-function Dashboard({ user }: DashboardProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const response = await axios.get("/api/users");
+        const users = response.data.users as User[];
+        setUsers(users);
+      } catch (error) {}
+    }
+
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    const userId = params.get("userId");
+    if (!userId) return;
+
+    const user = users.find((user) => user.id === userId);
+    if (!user) return;
+
+    setSelectedUser(user);
+  }, [users, params]);
 
   function changeSelectedUser(user: User) {
-    setSelectedUser(user);
+    router.push(`?userId=${user.id}`);
   }
 
   return (
     <div className="h-screen flex flex-col">
       <NavBar />
-      <div className="h-[calc(100vh-64px)] flex">
+      <div className="grow flex">
         <SideBar
           selectedUser={selectedUser}
           changeSelectedUser={changeSelectedUser}

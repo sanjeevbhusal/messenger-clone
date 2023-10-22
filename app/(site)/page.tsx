@@ -35,5 +35,5 @@ export default function Home() {
     );
   }
 
-  return <Dashboard user={user as User} />;
+  return <Dashboard />;
 }

@@ -3,6 +3,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import ChatInput from "./ChatInput";
 
 interface ChatProps {
   user: User | null;
@@ -38,9 +39,20 @@ function Chat({ user }: ChatProps) {
     fetchChat();
   }, [user]);
 
+  if (!user) {
+    return (
+      <div className="w-[60%] grow flex items-center justify-center flex-col gap-2">
+        <p className="font-semibold">No User Selected</p>
+        <p className="text-gray-500">
+          Select a user from the sidebar to start the conversation
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-[60%] grow">
-      <div className="h-16 border-b px-8 py-2">
+    <div className="grow flex flex-col justify-between">
+      <div className="p-2 border-b">
         <div className="flex gap-2 items-center">
           <Avatar className="w-12 h-12">
             <AvatarImage
@@ -52,7 +64,7 @@ function Chat({ user }: ChatProps) {
           <p className="text-sm">{user?.name}</p>
         </div>
       </div>
-      <div className="h-[calc(100%-64px)] overflow-auto px-8 pt-4 ">
+      <div className="p-2 border-b grow overflow-auto h-[400px]">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <Loader2 className="animate-spin w-16 h-16" />
@@ -75,6 +87,11 @@ function Chat({ user }: ChatProps) {
           })
         )}
       </div>
+      {isLoading ? null : (
+        <div className="p-2 min-h-[60px]">
+          <ChatInput />
+        </div>
+      )}
     </div>
   );
 }
