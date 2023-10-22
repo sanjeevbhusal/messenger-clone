@@ -1,21 +1,20 @@
 import { User } from "@prisma/client";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import axios from "axios";
-import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import ChatInput from "./ChatInput";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-interface ChatProps {
+interface Props {
   user: User | null;
 }
-
 interface Chat {
   id: string;
   senderId: string;
   message: string;
 }
 
-function Chat({ user }: ChatProps) {
+function Chat({ user }: Props) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,7 +40,7 @@ function Chat({ user }: ChatProps) {
 
   if (!user) {
     return (
-      <div className="w-[60%] grow flex items-center justify-center flex-col gap-2">
+      <div className="grow flex items-center justify-center flex-col gap-2">
         <p className="font-semibold">No User Selected</p>
         <p className="text-gray-500">
           Select a user from the sidebar to start the conversation
@@ -49,7 +48,6 @@ function Chat({ user }: ChatProps) {
       </div>
     );
   }
-
   return (
     <div className="grow flex flex-col justify-between">
       <div className="p-2 border-b">

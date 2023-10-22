@@ -4,11 +4,10 @@ import Image from "next/image";
 import AuthenticationForm from "../../components/AuthenticationForm";
 import useAuth from "../hooks/useAuth";
 import { Loader2 } from "lucide-react";
-import { User } from "@prisma/client";
-import Dashboard from "@/components/Dashboard";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  const { status, user } = useAuth();
+  const { status } = useAuth();
 
   if (status === "loading") {
     return (
@@ -35,5 +34,5 @@ export default function Home() {
     );
   }
 
-  return <Dashboard />;
+  redirect("/dashboard");
 }
